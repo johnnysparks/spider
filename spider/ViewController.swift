@@ -9,21 +9,10 @@
 import UIKit
 
 extension UIView {
-    func point(at corner: UIRectCorner) -> CGPoint {
-        switch corner {
-        case .topLeft:
-            return frame.origin
-        case .topRight:
-            return CGPoint(x: frame.minX, y: frame.maxY)
-        case .bottomLeft:
-            return CGPoint(x: frame.maxX, y: frame.minY)
-        case .bottomRight:
-            return CGPoint(x: frame.maxX, y: frame.maxY)
-        default:
-            print("Only a single corner is allowed, defaulting to CGPoint.zero")
-            return .zero
-        }
-    }
+    var topLeftPoint: CGPoint { return frame.origin }
+    var topRightPoint: CGPoint { return CGPoint(x: frame.minX, y: frame.maxY) }
+    var bottomLeftPoint: CGPoint { return CGPoint(x: frame.maxX, y: frame.minY) }
+    var bottomRightPoint: CGPoint { return CGPoint(x: frame.maxX, y: frame.maxY) }
 }
 
 class SpiderView: UIView {
@@ -31,6 +20,26 @@ class SpiderView: UIView {
         super.layoutSubviews()
         self.backgroundColor = .white
         self.layer.cornerRadius = self.bounds.height * 0.5
+    }
+}
+
+
+enum Boundary: String {
+    case top = "top"
+    case left = "left"
+    case bottom = "bottom"
+    case right = "right"
+
+    var identifier: NSString {
+        return self.rawValue as NSString
+    }
+
+    static func from(_ identifier: NSCopying?) -> Boundary? {
+        guard let string = identifier as? NSString else {
+            return nil
+        }
+
+        return Boundary(rawValue: string as String)
     }
 }
 
@@ -42,7 +51,14 @@ class ViewController: UIViewController {
     }
 
     // Views
-    lazy var spider = SpiderView(frame: CGRect(x: self.centerX - 25, y: 0, width: 50, height: 50))
+    lazy var spider = SpiderView(frame: CGRect(x: self.centerX - 15, y: 0, width: 30, height: 30))
+
+    lazy var background: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "background2.png"))
+        imageView.contentMode = .scaleAspectFill
+        imageView.frame = self.view.bounds.insetBy(dx: -50, dy: -50)
+        return imageView
+    }()
 
     // Interactions
     lazy var tap = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
@@ -54,21 +70,23 @@ class ViewController: UIViewController {
 
     lazy var walls: UICollisionBehavior = {
         let walls = UICollisionBehavior(items: [self.spider])
-        walls.addBoundary(withIdentifier: "top" as NSString,
-                          from: self.view.point(at: .topLeft),
-                          to:  self.view.point(at: .topRight))
-        walls.addBoundary(withIdentifier: "left" as NSString,
-                          from: self.view.point(at: .topRight),
-                          to:  self.view.point(at: .bottomRight))
-        walls.addBoundary(withIdentifier: "bottom" as NSString,
-                          from: self.view.point(at: .bottomRight),
-                          to:  self.view.point(at: .bottomLeft))
-        walls.addBoundary(withIdentifier: "right" as NSString,
-                          from: self.view.point(at: .topLeft),
-                          to:  self.view.point(at: .bottomLeft))
-
+        walls.addBoundary(withIdentifier: Boundary.top.identifier,
+                          from: self.view.topLeftPoint,
+                          to:  self.view.topRightPoint)
+        walls.addBoundary(withIdentifier: Boundary.left.identifier,
+                          from: self.view.topRightPoint,
+                          to:  self.view.bottomRightPoint)
+        walls.addBoundary(withIdentifier: Boundary.bottom.identifier,
+                          from: self.view.bottomRightPoint,
+                          to:  self.view.bottomLeftPoint)
+        walls.addBoundary(withIdentifier: Boundary.right.identifier,
+                          from: self.view.topLeftPoint,
+                          to:  self.view.bottomLeftPoint)
+        walls.collisionDelegate = self
         return walls
     }()
+
+    var lastAttachmentBoundary: Boundary?
 
     lazy var attatchment: UIAttachmentBehavior = {
         let attatchment = UIAttachmentBehavior(item: self.spider, attachedToAnchor: CGPoint(x: self.centerX, y: 0))
@@ -88,6 +106,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Setup views
         view.backgroundColor = .black
+        view.addSubview(background)
         view.addSubview(spider)
         view.addGestureRecognizer(tap)
 
@@ -110,6 +129,10 @@ class ViewController: UIViewController {
         let location = g.location(in: view)
 
         gravity.gravityDirection = CGVector(dx: location.x - view.center.x, dy: location.y - view.center.y)
+        UIView.animate(withDuration: 0.2) {
+            self.background.transform = CGAffineTransform(rotationAngle: self.gravity.angle - CGFloat.pi / 2)
+        }
+
         gravity.magnitude = 1
     }
 
@@ -128,3 +151,16 @@ class ViewController: UIViewController {
     }
 }
 
+extension ViewController: UICollisionBehaviorDelegate {
+    func collisionBehavior(_ behavior: UICollisionBehavior, beganContactFor item: UIDynamicItem, withBoundaryIdentifier identifier: NSCopying?, at p: CGPoint) {
+
+        guard let boundary = Boundary.from(identifier), boundary != lastAttachmentBoundary else {
+            return
+        }
+
+        attatchment.anchorPoint = p
+        attatchment.length = 0
+        lastAttachmentBoundary = boundary
+        print(boundary.rawValue)
+    }
+}
