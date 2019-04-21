@@ -8,24 +8,6 @@
 
 import UIKit
 
-extension UIView {
-    func point(at corner: UIRectCorner) -> CGPoint {
-        switch corner {
-        case .topLeft:
-            return frame.origin
-        case .topRight:
-            return CGPoint(x: frame.minX, y: frame.maxY)
-        case .bottomLeft:
-            return CGPoint(x: frame.maxX, y: frame.minY)
-        case .bottomRight:
-            return CGPoint(x: frame.maxX, y: frame.maxY)
-        default:
-            print("Only a single corner is allowed, defaulting to CGPoint.zero")
-            return .zero
-        }
-    }
-}
-
 class SpiderView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -54,19 +36,7 @@ class ViewController: UIViewController {
 
     lazy var walls: UICollisionBehavior = {
         let walls = UICollisionBehavior(items: [self.spider])
-        walls.addBoundary(withIdentifier: "top" as NSString,
-                          from: self.view.point(at: .topLeft),
-                          to:  self.view.point(at: .topRight))
-        walls.addBoundary(withIdentifier: "left" as NSString,
-                          from: self.view.point(at: .topRight),
-                          to:  self.view.point(at: .bottomRight))
-        walls.addBoundary(withIdentifier: "bottom" as NSString,
-                          from: self.view.point(at: .bottomRight),
-                          to:  self.view.point(at: .bottomLeft))
-        walls.addBoundary(withIdentifier: "right" as NSString,
-                          from: self.view.point(at: .topLeft),
-                          to:  self.view.point(at: .bottomLeft))
-
+        walls.translatesReferenceBoundsIntoBoundary = true
         return walls
     }()
 
