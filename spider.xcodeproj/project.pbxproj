@@ -11,6 +11,10 @@
 		F64C2A2B226BB72000A7372E /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64C2A2A226BB72000A7372E /* ViewController.swift */; };
 		F64C2A30226BB72100A7372E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F64C2A2F226BB72100A7372E /* Assets.xcassets */; };
 		F64C2A33226BB72100A7372E /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F64C2A31226BB72100A7372E /* LaunchScreen.storyboard */; };
+		F64C2A3B226CF89A00A7372E /* UIView+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64C2A3A226CF89A00A7372E /* UIView+Extensions.swift */; };
+		F64C2A3D226CF8B000A7372E /* SpiderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64C2A3C226CF8B000A7372E /* SpiderView.swift */; };
+		F64C2A3F226CF8CF00A7372E /* ThreadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64C2A3E226CF8CF00A7372E /* ThreadView.swift */; };
+		F64C2A41226CF8EA00A7372E /* Boundary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F64C2A40226CF8EA00A7372E /* Boundary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +24,10 @@
 		F64C2A2F226BB72100A7372E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F64C2A32226BB72100A7372E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		F64C2A34226BB72100A7372E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F64C2A3A226CF89A00A7372E /* UIView+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+Extensions.swift"; sourceTree = "<group>"; };
+		F64C2A3C226CF8B000A7372E /* SpiderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderView.swift; sourceTree = "<group>"; };
+		F64C2A3E226CF8CF00A7372E /* ThreadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadView.swift; sourceTree = "<group>"; };
+		F64C2A40226CF8EA00A7372E /* Boundary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boundary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +62,10 @@
 			children = (
 				F64C2A28226BB72000A7372E /* AppDelegate.swift */,
 				F64C2A2A226BB72000A7372E /* ViewController.swift */,
+				F64C2A3E226CF8CF00A7372E /* ThreadView.swift */,
+				F64C2A40226CF8EA00A7372E /* Boundary.swift */,
+				F64C2A3C226CF8B000A7372E /* SpiderView.swift */,
+				F64C2A3A226CF89A00A7372E /* UIView+Extensions.swift */,
 				F64C2A2F226BB72100A7372E /* Assets.xcassets */,
 				F64C2A31226BB72100A7372E /* LaunchScreen.storyboard */,
 				F64C2A34226BB72100A7372E /* Info.plist */,
@@ -131,6 +143,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F64C2A3B226CF89A00A7372E /* UIView+Extensions.swift in Sources */,
+				F64C2A41226CF8EA00A7372E /* Boundary.swift in Sources */,
+				F64C2A3F226CF8CF00A7372E /* ThreadView.swift in Sources */,
+				F64C2A3D226CF8B000A7372E /* SpiderView.swift in Sources */,
 				F64C2A2B226BB72000A7372E /* ViewController.swift in Sources */,
 				F64C2A29226BB72000A7372E /* AppDelegate.swift in Sources */,
 			);
