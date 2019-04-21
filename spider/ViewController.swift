@@ -8,6 +8,23 @@
 
 import UIKit
 
+extension UIView {
+    func point(at corner: UIRectCorner) -> CGPoint {
+        switch corner {
+        case .topLeft:
+            return frame.origin
+        case .topRight:
+            return CGPoint(x: frame.minX, y: frame.maxY)
+        case .bottomLeft:
+            return CGPoint(x: frame.maxX, y: frame.minY)
+        case .bottomRight:
+            return CGPoint(x: frame.maxX, y: frame.maxY)
+        default:
+            print("Only a single corner is allowed, defaulting to CGPoint.zero")
+            return .zero
+        }
+    }
+}
 
 class SpiderView: UIView {
     override func layoutSubviews() {
@@ -17,19 +34,41 @@ class SpiderView: UIView {
     }
 }
 
-
-
 class ViewController: UIViewController {
 
+    // Utilities
     var centerX: CGFloat {
         return self.view.bounds.midX
     }
 
+    // Views
     lazy var spider = SpiderView(frame: CGRect(x: self.centerX - 25, y: 0, width: 50, height: 50))
+
+    // Interactions
+    lazy var tap = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
+
+    // UIDynamics
     lazy var animator = UIDynamicAnimator(referenceView: self.view)
 
+    lazy var gravity = UIGravityBehavior(items: [self.spider])
 
-    lazy var tap = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
+    lazy var walls: UICollisionBehavior = {
+        let walls = UICollisionBehavior(items: [self.spider])
+        walls.addBoundary(withIdentifier: "top" as NSString,
+                          from: self.view.point(at: .topLeft),
+                          to:  self.view.point(at: .topRight))
+        walls.addBoundary(withIdentifier: "left" as NSString,
+                          from: self.view.point(at: .topRight),
+                          to:  self.view.point(at: .bottomRight))
+        walls.addBoundary(withIdentifier: "bottom" as NSString,
+                          from: self.view.point(at: .bottomRight),
+                          to:  self.view.point(at: .bottomLeft))
+        walls.addBoundary(withIdentifier: "right" as NSString,
+                          from: self.view.point(at: .topLeft),
+                          to:  self.view.point(at: .bottomLeft))
+
+        return walls
+    }()
 
     lazy var attatchment: UIAttachmentBehavior = {
         let attatchment = UIAttachmentBehavior(item: self.spider, attachedToAnchor: CGPoint(x: self.centerX, y: 0))
@@ -39,30 +78,46 @@ class ViewController: UIViewController {
         return attatchment
     }()
 
+
+    // Loop
+    var timer: Timer?
+
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         // Setup views
         view.backgroundColor = .black
         view.addSubview(spider)
-
         view.addGestureRecognizer(tap)
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            self.growThread()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
         // Setup behavior
-        let gravity = UIGravityBehavior(items: [self.spider])
         self.animator.addBehavior(gravity)
         self.animator.addBehavior(attatchment)
+        self.animator.addBehavior(walls)
     }
 
     @objc
     private func onTap(_ g: UITapGestureRecognizer) {
-        attatchment.length += 20
+        let location = g.location(in: view)
+
+        gravity.gravityDirection = CGVector(dx: location.x - view.center.x, dy: location.y - view.center.y)
+        gravity.magnitude = 1
     }
 
+    func growThread() {
+        attatchment.length += 40
+    }
 
+    // Scratchpad
     func push(to location: CGPoint) {
         let push = UIPushBehavior(items: [spider], mode: .instantaneous)
         let dx = (location.x - spider.center.x) / 30
