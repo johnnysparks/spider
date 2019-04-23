@@ -9,6 +9,12 @@
 import UIKit
 
 
+extension UIDynamicItem where Self == UIView {
+    static func ==(lhs: Self, rhs: Self) -> Bool {
+        return lhs == rhs
+    }
+}
+
 extension CGPoint {
     func distance(to point: CGPoint) -> CGFloat {
         return sqrt(pow(point.x - self.x, 2) + pow(point.y - self.y, 2))
@@ -24,9 +30,28 @@ extension CGPoint {
     }
 }
 
+class Intersection {
+    var at: Date = Date()
+    var begin: UIView
+    var end: UIView
+    var points: [UIView]
+
+    init(begin: UIView, end: UIView, points: [UIView]) {
+        self.begin = begin
+        self.end = end
+        self.points = points
+    }
+}
+
+extension Intersection: Equatable {
+    static func == (lhs: Intersection, rhs: Intersection) -> Bool {
+        return lhs.begin == rhs.begin && lhs.end == rhs.end
+    }
+}
 
 class TestWebViewController: UIViewController {
     var nodes: [UIView] = []
+    var intersections: [Intersection] = []
 
     // Utilities
     var centerX: CGFloat {
@@ -64,11 +89,10 @@ class TestWebViewController: UIViewController {
 
         let dist = items.0.center.distance(to: items.1.center)
 
-        // every 10 pts
-        let links: [UIDynamicItem] = (
-            [items.0] + (0..<Int(dist / linkDist)).map({ _ in makeLink() }) + [items.1]
-        ).compactMap { $0 }
+        let miniLinks: [UIView] = (0..<Int(dist / linkDist)).map({ _ in makeLink() })
 
+        // every 10 pts
+        let links: [UIView] = [items.0] + miniLinks + [items.1]
 
         links.enumerated().forEach { idx, curr in
             guard idx < links.count - 1 else { return }
@@ -90,6 +114,8 @@ class TestWebViewController: UIViewController {
 
             self.animator.addBehavior(attatchment)
         }
+
+        self.intersections.append(Intersection(begin: items.0, end: items.1, points: miniLinks))
     }
 
     func addIntersection(at point: CGPoint) {
@@ -110,13 +136,39 @@ class TestWebViewController: UIViewController {
         gravity.addItem(node)
 
         if let last = nodes.last {
-
             addChain(between: (node, last))
-
             gravity.addItem(node)
         }
 
         nodes.append(node)
+    }
+
+    // Clean up all links in a chain, matching the first chain that is within some minimum distance
+    // to the link.
+    //
+    // This includes cleaning up all
+    // - behaviors
+    // - intersections
+    // - chain links
+    //
+    func removeChain(at location: CGPoint) {
+        let minDist: CGFloat = 10
+
+        self.intersections
+            .map { i in (i, i.points.first(where: { $0.center.distance(to: location) < minDist })) }
+            .first(where: { $0.1 != nil })
+            .map { pair in
+                pair.0.points.forEach { link in
+                    self.animator.behaviors
+                        .compactMap { $0 as? UIAttachmentBehavior }
+                        .filter { $0.items.compactMap({ $0 as? UIView }).contains(link) }
+                        .forEach { self.animator.removeBehavior($0) }
+
+                    link.removeFromSuperview()
+                }
+
+                self.intersections.removeAll(where: { $0 == pair.0 })
+            }
     }
 
     // Loop
@@ -141,9 +193,29 @@ class TestWebViewController: UIViewController {
         [gravity].forEach { self.animator.addBehavior($0) }
     }
 
+    func highlightLink(at location: CGPoint) {
+        let minDist: CGFloat = 10
+        let tappedLink = self.intersections
+            .map { $0.points }
+            .flatMap { $0 }
+            .first(where: { $0.center.distance(to: location) < minDist })
+
+        if let link = tappedLink {
+            let oldCenter = link.center
+            link.backgroundColor = .purple
+            link.frame = CGRect(x: 0, y: 0, width: 20, height: 20)
+            link.layer.cornerRadius = 10
+            link.center = oldCenter
+        }
+    }
+
+
     @objc
     private func onTap(_ g: UITapGestureRecognizer) {
         let location = g.location(in: view)
+
+
+//        removeChain(at: location)
 
         gravity.gravityDirection = CGVector(dx: location.x - view.center.x, dy: location.y - view.center.y)
         UIView.animate(withDuration: 0.2) {
@@ -153,6 +225,9 @@ class TestWebViewController: UIViewController {
         gravity.magnitude = 0.5
 
         addIntersection(at: location)
+
+        // This shit's for testing I guess?
+        highlightLink(at: location)
     }
 }
 
