@@ -8,6 +8,154 @@
 
 import UIKit
 
+
+extension CGPoint {
+    func distance(to point: CGPoint) -> CGFloat {
+        return sqrt(pow(point.x - self.x, 2) + pow(point.y - self.y, 2))
+    }
+
+    func mid(to point: CGPoint) -> CGPoint {
+        return self.point(percent: 0.5, approaching: point)
+    }
+
+    func point(percent: CGFloat, approaching point: CGPoint) -> CGPoint {
+        return CGPoint(x: (max(self.x, point.x) - min(self.x, point.x)) * percent + min(self.x, point.x),
+                       y: (max(self.y, point.y) - min(self.y, point.y)) * percent + min(self.y, point.y))
+    }
+}
+
+
+class TestWebViewController: UIViewController {
+    var nodes: [UIView] = []
+
+    // Utilities
+    var centerX: CGFloat {
+        return self.view.bounds.midX
+    }
+
+    // Views
+    lazy var background: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "background2.png"))
+        imageView.contentMode = .scaleAspectFill
+        imageView.frame = self.view.bounds.insetBy(dx: -50, dy: -50)
+        return imageView
+    }()
+
+    // Interactions
+    lazy var tap = UITapGestureRecognizer(target: self, action: #selector(onTap(_:)))
+
+    // UIDynamics
+    lazy var animator = UIDynamicAnimator(referenceView: self.view)
+
+    lazy var gravity = UIGravityBehavior(items: [])
+
+    func addChain(between items:(UIView, UIView)) {
+
+        let linkDist: CGFloat = 10
+
+        func makeLink() -> UIView {
+            let midNode = UIView(frame: CGRect(x: 0, y: 0, width: 3, height: 3))
+            midNode.backgroundColor = UIColor.white.withAlphaComponent(0.75)
+            midNode.layer.cornerRadius = 1.5
+            self.view.addSubview(midNode)
+
+            return midNode
+        }
+
+        let dist = items.0.center.distance(to: items.1.center)
+
+        // every 10 pts
+        let links: [UIDynamicItem] = (
+            [items.0] + (0..<Int(dist / linkDist)).map({ _ in makeLink() }) + [items.1]
+        ).compactMap { $0 }
+
+
+        links.enumerated().forEach { idx, curr in
+            guard idx < links.count - 1 else { return }
+
+            let next = links[idx + 1]
+
+            let percent = CGFloat(idx) / (dist / linkDist)
+            let linkLocation = items.0.center.point(percent: percent, approaching: items.1.center)
+            curr.center = linkLocation
+
+            let nextPercent = CGFloat(idx + 1) / (dist / linkDist)
+            let nextLocation = items.0.center.point(percent: nextPercent, approaching: items.1.center)
+            next.center = nextLocation
+
+            let attatchment = UIAttachmentBehavior(item: curr, attachedTo: next)
+            attatchment.length = linkDist * 0.9
+            attatchment.damping = 1
+            attatchment.frequency = 30
+
+            self.animator.addBehavior(attatchment)
+        }
+    }
+
+    func addIntersection(at point: CGPoint) {
+        let node = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: 10))
+        node.backgroundColor = .white
+        node.layer.cornerRadius = 5
+        node.center = point
+        view.addSubview(node)
+
+
+        let attatchment = UIAttachmentBehavior(item: node, attachedToAnchor: point)
+        attatchment.length = 0.0
+        attatchment.damping = 0.9
+        attatchment.frequency = 5
+        attatchment.attachmentRange = UIFloatRange(minimum: -50, maximum: 50)
+
+        animator.addBehavior(attatchment)
+        gravity.addItem(node)
+
+        if let last = nodes.last {
+
+            addChain(between: (node, last))
+
+            gravity.addItem(node)
+        }
+
+        nodes.append(node)
+    }
+
+    // Loop
+    var timer: Timer?
+
+    // MARK: - Lifecycle
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Setup views
+        view.backgroundColor = .black
+        [background].forEach { view.addSubview($0) }
+
+        // Setup gestures
+        view.addGestureRecognizer(tap)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // Setup behavior
+        [gravity].forEach { self.animator.addBehavior($0) }
+    }
+
+    @objc
+    private func onTap(_ g: UITapGestureRecognizer) {
+        let location = g.location(in: view)
+
+        gravity.gravityDirection = CGVector(dx: location.x - view.center.x, dy: location.y - view.center.y)
+        UIView.animate(withDuration: 0.2) {
+            self.background.transform = CGAffineTransform(rotationAngle: self.gravity.angle - CGFloat.pi / 2)
+        }
+
+        gravity.magnitude = 0.5
+
+        addIntersection(at: location)
+    }
+}
+
 class ViewController: UIViewController {
 
     // Utilities
